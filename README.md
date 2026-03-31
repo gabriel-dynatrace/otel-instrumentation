@@ -180,7 +180,7 @@ curl -L -O https://github.com/open-telemetry/opentelemetry-java-instrumentation/
 ```bash
 export JAVA_TOOL_OPTIONS="-javaagent:/path/to/opentelemetry-javaagent.jar"
 export OTEL_SERVICE_NAME="checkout-service"
-export OTEL_RESOURCE_ATTRIBUTES="service.version=2.1.0,deployment.environment=production"
+export OTEL_RESOURCE_ATTRIBUTES="service.version=2.1.0,deployment.environment.name=production"
 export OTEL_EXPORTER_OTLP_ENDPOINT="https://{environment-id}.live.dynatrace.com/api/v2/otlp"
 export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Api-Token {your-token}"
 export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
@@ -231,7 +231,7 @@ Or with environment variables (recommended for production):
 
 ```bash
 export OTEL_SERVICE_NAME="inventory-service"
-export OTEL_RESOURCE_ATTRIBUTES="service.version=0.4.2,deployment.environment=staging"
+export OTEL_RESOURCE_ATTRIBUTES="service.version=0.4.2,deployment.environment.name=staging"
 export OTEL_EXPORTER_OTLP_ENDPOINT="https://{environment-id}.live.dynatrace.com/api/v2/otlp"
 export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Api-Token {your-token}"
 export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
@@ -275,52 +275,24 @@ Node.js auto-instrumentation uses the `@opentelemetry/auto-instrumentations-node
 **Step 1 — Install:**
 
 ```bash
-npm install \
-  @opentelemetry/sdk-node \
-  @opentelemetry/api \
-  @opentelemetry/auto-instrumentations-node \
-  @opentelemetry/exporter-trace-otlp-proto \
-  @opentelemetry/exporter-metrics-otlp-proto
+npm install --save @opentelemetry/api
+npm install --save @opentelemetry/auto-instrumentations-node
 ```
 
-**Step 2 — Create `instrumentation.js`:**
-
-```javascript
-const { NodeSDK } = require('@opentelemetry/sdk-node');
-const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
-const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-proto');
-const { OTLPMetricExporter } = require('@opentelemetry/exporter-metrics-otlp-proto');
-const { PeriodicExportingMetricReader } = require('@opentelemetry/sdk-metrics');
-
-const sdk = new NodeSDK({
-  traceExporter: new OTLPTraceExporter(),   // reads OTEL_EXPORTER_OTLP_* env vars
-  metricReader: new PeriodicExportingMetricReader({
-    exporter: new OTLPMetricExporter(),
-    exportIntervalMillis: 60000,
-  }),
-  instrumentations: [getNodeAutoInstrumentations()],
-});
-
-sdk.start();
-```
-
-**Step 3 — Run:**
+**Step 2 — Run your app:**
 
 ```bash
 export OTEL_SERVICE_NAME="payment-service"
-export OTEL_RESOURCE_ATTRIBUTES="service.version=3.0.1,deployment.environment=production"
+export OTEL_RESOURCE_ATTRIBUTES="service.version=3.0.1,deployment.environment.name=production"
 export OTEL_EXPORTER_OTLP_ENDPOINT="https://{environment-id}.live.dynatrace.com/api/v2/otlp"
 export OTEL_EXPORTER_OTLP_HEADERS="Authorization=Api-Token {your-token}"
 export OTEL_EXPORTER_OTLP_PROTOCOL="http/protobuf"
+export NODE_OPTIONS="--require @opentelemetry/auto-instrumentations-node/register"
 
-node --require ./instrumentation.js app.js
+node app.js
 ```
 
-Or using ESM:
-
-```bash
-node --import ./instrumentation.mjs app.js
-```
+Every HTTP request, database call, and outbound fetch is automatically traced. No `instrumentation.js` file needed.
 
 **Express app example** (`app.js`):
 
@@ -710,7 +682,7 @@ Resources describe the entity emitting telemetry. They appear as dimensions in D
 | `service.name` | **Required** | `checkout-service` | Service entity creation in Dynatrace |
 | `service.version` | Recommended | `2.1.0` | Version tag shown in Dynatrace |
 | `service.namespace` | Recommended | `ecommerce` | Groups related services |
-| `deployment.environment` | Recommended | `production` | Shown in Dynatrace environment context |
+| `deployment.environment.name` | Recommended | `production` | Shown in Dynatrace environment context |
 | `host.name` | Auto-detected | `web-server-01` | Links to host entity |
 | `k8s.cluster.name` | K8s only | `prod-cluster` | Links to Kubernetes cluster entity |
 | `k8s.namespace.name` | K8s only | `payments` | Links to Kubernetes namespace |
@@ -722,7 +694,7 @@ Resources describe the entity emitting telemetry. They appear as dimensions in D
 
 ```bash
 OTEL_SERVICE_NAME="checkout-service"
-OTEL_RESOURCE_ATTRIBUTES="service.version=2.1.0,service.namespace=ecommerce,deployment.environment=production"
+OTEL_RESOURCE_ATTRIBUTES="service.version=2.1.0,service.namespace=ecommerce,deployment.environment.name=production"
 ```
 
 `OTEL_SERVICE_NAME` always takes precedence over `service.name` in `OTEL_RESOURCE_ATTRIBUTES`.
@@ -733,11 +705,12 @@ OTEL_RESOURCE_ATTRIBUTES="service.version=2.1.0,service.namespace=ecommerce,depl
 Resource resource = Resource.getDefault().merge(
     Resource.create(Attributes.of(
         ResourceAttributes.SERVICE_NAME, "checkout-service",
-        ResourceAttributes.SERVICE_VERSION, "2.1.0",
-        ResourceAttributes.DEPLOYMENT_ENVIRONMENT, "production"
+        ResourceAttributes.SERVICE_VERSION, "2.1.0"
     ))
 );
 ```
+
+> Set `deployment.environment.name` via `OTEL_RESOURCE_ATTRIBUTES` env var rather than programmatically — the `ResourceAttributes` constant for this attribute changed across semconv versions and environment variables are more portable.
 
 ### Attribute Limits in Dynatrace
 
@@ -975,7 +948,7 @@ metadata:
 data:
   OTEL_EXPORTER_OTLP_ENDPOINT: "https://{environment-id}.live.dynatrace.com/api/v2/otlp"
   OTEL_EXPORTER_OTLP_PROTOCOL: "http/protobuf"
-  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment=production,k8s.cluster.name=prod-cluster"
+  OTEL_RESOURCE_ATTRIBUTES: "deployment.environment.name=production,k8s.cluster.name=prod-cluster"
 ```
 
 `secret.yaml`:
@@ -1135,7 +1108,7 @@ exporter = OTLPSpanExporter(
 │                         │ logs.ingest                (logs)                      │
 ├─────────────────────────┼────────────────────────────────────────────────────────┤
 │ Required resource attr  │ service.name  (mandatory for service detection)        │
-│ Recommended attrs       │ service.version, deployment.environment                │
+│ Recommended attrs       │ service.version, deployment.environment.name           │
 │                         │ service.namespace, k8s.cluster.name                    │
 ├─────────────────────────┼────────────────────────────────────────────────────────┤
 │ Attribute limits        │ Key: 1–100 chars, Value: 1–255 chars                   │

@@ -267,7 +267,7 @@ The `file_storage` extension persists file read offsets to disk, preventing both
 extensions:
   file_storage:
     directory: /var/lib/otelcol/filelogstorage    # must be writable by the Collector process
-    timeout: 10s
+    timeout: 1s
 
 receivers:
   filelog:
@@ -317,7 +317,7 @@ processors:
       - key: service.version
         value: "2.1.0"
         action: insert
-      - key: deployment.environment
+      - key: deployment.environment.name
         value: production
         action: insert
       - key: host.name
@@ -340,7 +340,7 @@ processors:
 |-----------|---------|
 | `service.name` | Links log to the Dynatrace Service entity |
 | `service.version` | Shown in log context; useful for deployment correlation |
-| `deployment.environment` | Filters logs by environment in Dynatrace |
+| `deployment.environment.name` | Filters logs by environment in Dynatrace |
 | `host.name` | Links log to the Dynatrace Host entity |
 | `k8s.pod.name` | Links log to the Kubernetes Pod entity |
 | `k8s.namespace.name` | Links log to the Kubernetes Namespace entity |
@@ -437,7 +437,7 @@ processors:
       - key: service.name
         value: checkout-service
         action: insert
-      - key: deployment.environment
+      - key: deployment.environment.name
         value: ${DEPLOYMENT_ENV}
         action: insert
   resourcedetection:
@@ -491,30 +491,9 @@ receivers:
         severity:
           parse_from: attributes.status
           mapping:
-            error:
-              range:
-                min: 500
-                max: 599
-            warn:
-              range:
-                min: 400
-                max: 499
-            info:
-              range:
-                min: 200
-                max: 399
-      - type: add
-        field: attributes.http.method
-        value: EXPR(attributes.method)
-      - type: add
-        field: attributes.http.status_code
-        value: EXPR(attributes.status)
-      - type: add
-        field: attributes.http.url
-        value: EXPR(attributes.path)
-      - type: add
-        field: attributes.http.request_duration_ms
-        value: EXPR(float(attributes.duration) * 1000)
+            error: ["500", "501", "502", "503", "504", "505"]
+            warn: ["400", "401", "403", "404", "429"]
+            info: ["200", "201", "204", "301", "302"]
 
 processors:
   resource:
@@ -522,7 +501,7 @@ processors:
       - key: service.name
         value: nginx
         action: insert
-      - key: deployment.environment
+      - key: deployment.environment.name
         value: production
         action: insert
   batch:
@@ -567,13 +546,13 @@ receivers:
     start_at: end
     storage: file_storage
     multiline:
-      line_start_pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}'
+      line_start_pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}'
     operators:
       - type: regex_parser
-        regex: '^(?P<log_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<severity>\w+) \[(?P<thread>[^\]]+)\] (?P<logger>\S+) - (?P<message>[\s\S]+)$'
+        regex: '^(?P<log_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d{3} (?P<severity>\w+) \[(?P<thread>[^\]]+)\] (?P<logger>\S+) - (?P<message>[\s\S]+)$'
         timestamp:
           parse_from: attributes.log_time
-          layout: '%Y-%m-%d %H:%M:%S,%L'        # %L = milliseconds
+          layout: '%Y-%m-%d %H:%M:%S'
         severity:
           parse_from: attributes.severity
           mapping:
@@ -593,7 +572,7 @@ processors:
       - key: service.version
         value: ${APP_VERSION}
         action: insert
-      - key: deployment.environment
+      - key: deployment.environment.name
         value: ${DEPLOYMENT_ENV}
         action: insert
   resourcedetection:
@@ -715,7 +694,7 @@ exporters:
 processors:
   resource:
     attributes:
-      - key: deployment.environment
+      - key: deployment.environment.name
         value: ${DEPLOY_ENV}
         action: insert
 ```
