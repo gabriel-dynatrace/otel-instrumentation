@@ -1155,6 +1155,14 @@ exporter = OTLPSpanExporter(
 
 ---
 
+## Guides
+
+| Guide | Description |
+|-------|-------------|
+| [filelog-collector.md](filelog-collector.md) | Ingest logs from files (JSON, regex, multiline, Nginx, Java) using the OTel Collector filelog receiver |
+
+---
+
 ## Further Reading
 
 - [OpenTelemetry Official Docs](https://opentelemetry.io/docs/)
