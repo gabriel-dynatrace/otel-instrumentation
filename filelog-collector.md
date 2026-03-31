@@ -35,7 +35,7 @@ flowchart LR
     FILES["📄 Log Files\n/var/log/app/*.log\n/var/log/nginx/access.log"]:::files
     RCV["📥 filelog\nreceiver"]:::col
     PROC["⚙️ processors\n(resource, batch)"]:::col
-    EXP["📤 otlphttp\nexporter"]:::col
+    EXP["📤 otlphttp/dynatrace\nexporter"]:::col
     DT["🔷 Dynatrace\nlogs.ingest"]:::dt
 
     FILES -->|"tail + parse"| RCV
@@ -79,7 +79,7 @@ receivers:
     start_at: end                # tail new lines only; use "beginning" for historical backfill
 
 exporters:
-  otlphttp:
+  otlphttp/dynatrace:
     endpoint: "https://{environment-id}.live.dynatrace.com/api/v2/otlp"
     headers:
       Authorization: "Api-Token ${DT_API_TOKEN}"
@@ -88,7 +88,7 @@ service:
   pipelines:
     logs:
       receivers: [filelog]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
 ```
 
 This sends each log line as a raw string. No timestamp or severity parsing yet — those require operators.
@@ -281,7 +281,7 @@ service:
   pipelines:
     logs:
       receivers: [filelog]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
 ```
 
 **File rotation behavior:**
@@ -448,7 +448,7 @@ processors:
     send_batch_size: 1024
 
 exporters:
-  otlphttp:
+  otlphttp/dynatrace:
     endpoint: "https://{environment-id}.live.dynatrace.com/api/v2/otlp"
     headers:
       Authorization: "Api-Token ${DT_API_TOKEN}"
@@ -459,7 +459,7 @@ service:
     logs:
       receivers: [filelog]
       processors: [resourcedetection, resource, batch]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
 ```
 
 ---
@@ -529,7 +529,7 @@ processors:
     timeout: 5s
 
 exporters:
-  otlphttp:
+  otlphttp/dynatrace:
     endpoint: "https://{environment-id}.live.dynatrace.com/api/v2/otlp"
     headers:
       Authorization: "Api-Token ${DT_API_TOKEN}"
@@ -540,7 +540,7 @@ service:
     logs:
       receivers: [filelog]
       processors: [resource, batch]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
 ```
 
 ---
@@ -603,7 +603,7 @@ processors:
     send_batch_size: 512
 
 exporters:
-  otlphttp:
+  otlphttp/dynatrace:
     endpoint: "https://{environment-id}.live.dynatrace.com/api/v2/otlp"
     headers:
       Authorization: "Api-Token ${DT_API_TOKEN}"
@@ -614,7 +614,7 @@ service:
     logs:
       receivers: [filelog]
       processors: [resourcedetection, resource, batch]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
 ```
 
 ---
@@ -708,7 +708,7 @@ Reference env vars with `${VAR_NAME}` anywhere in the config:
 
 ```yaml
 exporters:
-  otlphttp:
+  otlphttp/dynatrace:
     headers:
       Authorization: "Api-Token ${DT_API_TOKEN}"
 

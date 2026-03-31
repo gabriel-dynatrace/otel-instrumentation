@@ -800,7 +800,7 @@ processors:
         action: insert             # add env tag to all telemetry passing through
 
 exporters:
-  otlphttp:
+  otlphttp/dynatrace:
     endpoint: "https://{environment-id}.live.dynatrace.com/api/v2/otlp"
     headers:
       Authorization: "Api-Token ${DT_API_TOKEN}"
@@ -810,15 +810,15 @@ service:
     traces:
       receivers: [otlp]
       processors: [batch, resource]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
     metrics:
       receivers: [otlp]
       processors: [batch, resource]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
     logs:
       receivers: [otlp]
       processors: [batch, resource]
-      exporters: [otlphttp]
+      exporters: [otlphttp/dynatrace]
 ```
 
 **App-side config when using a Collector:**
