@@ -718,3 +718,7 @@ Or use a `.env`-style systemd unit or Docker `--env-file` to keep tokens out of 
 - [Operators reference — OpenTelemetry Contrib](https://github.com/open-telemetry/opentelemetry-collector-contrib/blob/main/pkg/stanza/docs/operators/README.md)
 - [Dynatrace Logs ingestion API](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/otlp-api)
 - [Dynatrace Collector documentation](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector)
+
+---
+
+> **Disclaimer:** This guide is AI-assisted and intended for reference and learning purposes only. It may contain inaccuracies, incomplete information, or content that has drifted from current product behavior — always consult the [official Dynatrace documentation](https://docs.dynatrace.com) for authoritative guidance. This is not an official Dynatrace resource.

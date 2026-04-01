@@ -1145,3 +1145,7 @@ exporter = OTLPSpanExporter(
 - [OTel Semantic Conventions](https://opentelemetry.io/docs/specs/semconv/)
 - [OTLP Exporter Environment Variables](https://opentelemetry.io/docs/concepts/sdk-configuration/otlp-exporter/)
 - [Dynatrace Collector Documentation](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector)
+
+---
+
+> **Disclaimer:** This guide is AI-assisted and intended for reference and learning purposes only. It may contain inaccuracies, incomplete information, or content that has drifted from current product behavior — always consult the [official Dynatrace documentation](https://docs.dynatrace.com) for authoritative guidance. This is not an official Dynatrace resource.
