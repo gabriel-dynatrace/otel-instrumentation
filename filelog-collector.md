@@ -206,12 +206,14 @@ Timestamp parsing is critical — without it, Dynatrace uses ingestion time, whi
 |-----------------|---------|---------|
 | `%Y` | 4-digit year | `2024` |
 | `%m` | 2-digit month | `11` |
+| `%b` | Abbreviated month name | `Nov` |
 | `%d` | 2-digit day | `15` |
 | `%H` | Hour (24h) | `14` |
 | `%M` | Minute | `32` |
 | `%S` | Second | `01` |
-| `%z` | Timezone offset | `+0000` |
-| `%Z` | Timezone name | `UTC` |
+| `%L` | Millisecond, zero-padded | `123` |
+| `%z` | Timezone offset `±HHMM` | `+0000` |
+| `%Z` | Timezone name or abbreviation | `UTC` |
 
 **Common timestamp formats:**
 
@@ -219,7 +221,7 @@ Timestamp parsing is critical — without it, Dynatrace uses ingestion time, whi
 # ISO 8601: 2024-11-15T14:32:01Z
 layout: '%Y-%m-%dT%H:%M:%SZ'
 
-# ISO 8601 with offset: 2024-11-15T14:32:01+00:00
+# ISO 8601 with offset: 2024-11-15T14:32:01+0000
 layout: '%Y-%m-%dT%H:%M:%S%z'
 
 # Common log format: 15/Nov/2024:14:32:01 +0000
@@ -491,9 +493,9 @@ receivers:
         severity:
           parse_from: attributes.status
           mapping:
-            error: ["500", "501", "502", "503", "504", "505"]
-            warn: ["400", "401", "403", "404", "429"]
-            info: ["200", "201", "204", "301", "302"]
+            error: 5xx
+            warn: 4xx
+            info: 2xx
 
 processors:
   resource:
@@ -549,10 +551,10 @@ receivers:
       line_start_pattern: '^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}'
     operators:
       - type: regex_parser
-        regex: '^(?P<log_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}),\d{3} (?P<severity>\w+) \[(?P<thread>[^\]]+)\] (?P<logger>\S+) - (?P<message>[\s\S]+)$'
+        regex: '^(?P<log_time>\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2},\d{3}) (?P<severity>\w+) \[(?P<thread>[^\]]+)\] (?P<logger>\S+) - (?P<message>[\s\S]+)$'
         timestamp:
           parse_from: attributes.log_time
-          layout: '%Y-%m-%d %H:%M:%S'
+          layout: '%Y-%m-%d %H:%M:%S,%L'
         severity:
           parse_from: attributes.severity
           mapping:
