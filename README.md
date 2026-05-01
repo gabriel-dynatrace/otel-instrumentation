@@ -1133,6 +1133,7 @@ exporter = OTLPSpanExporter(
 | Guide | Description |
 |-------|-------------|
 | [filelog-collector.md](filelog-collector.md) | Ingest logs from files (JSON, regex, multiline, Nginx, Java) using the OTel Collector filelog receiver |
+| [otel-demo-kubernetes.md](otel-demo-kubernetes.md) | Deploy the OTel Demo app to Kubernetes and route all telemetry to Dynatrace via Helm |
 
 ---
 
