@@ -8,23 +8,27 @@ A practical guide for receiving network flow telemetry from routers, switches, a
 
 1. [How It Works](#how-it-works)
 2. [Prerequisites](#prerequisites)
-3. [Basic Setup](#basic-setup)
-4. [Configuration Reference](#configuration-reference)
-5. [Protocol-Specific Setups](#protocol-specific-setups)
+3. [Getting the Collector Binary](#getting-the-collector-binary)
+   - [Option A — OTel Collector Contrib (pre-built)](#option-a--otel-collector-contrib-pre-built)
+   - [Option B — Dynatrace Collector](#option-b--dynatrace-collector)
+   - [Option C — Custom Build with OCB](#option-c--custom-build-with-ocb)
+4. [Basic Setup](#basic-setup)
+5. [Configuration Reference](#configuration-reference)
+6. [Protocol-Specific Setups](#protocol-specific-setups)
    - [NetFlow v5 / v9 / IPFIX](#netflow-v5--v9--ipfix)
    - [sFlow v5](#sflow-v5)
    - [Multi-Protocol (NetFlow + sFlow)](#multi-protocol-netflow--sflow)
-6. [Performance Tuning](#performance-tuning)
-7. [Deployment Options](#deployment-options)
+7. [Performance Tuning](#performance-tuning)
+8. [Deployment Options](#deployment-options)
    - [Linux](#linux)
    - [Docker](#docker)
    - [Kubernetes](#kubernetes)
-8. [Querying NetFlow Data in Dynatrace](#querying-netflow-data-in-dynatrace)
-9. [Log Record Fields](#log-record-fields)
-10. [Tips](#tips)
-11. [Troubleshooting](#troubleshooting)
-12. [Quick Reference Card](#quick-reference-card)
-13. [Further Reading](#further-reading)
+9. [Querying NetFlow Data in Dynatrace](#querying-netflow-data-in-dynatrace)
+10. [Log Record Fields](#log-record-fields)
+11. [Tips](#tips)
+12. [Troubleshooting](#troubleshooting)
+13. [Quick Reference Card](#quick-reference-card)
+14. [Further Reading](#further-reading)
 
 ---
 
@@ -73,6 +77,118 @@ Each flow record arrives in Dynatrace as a log entry with:
 **Firewall / ACL** — UDP traffic must be permitted from the network device to the Collector on the configured port. Both directions (device → collector host, and at the OS/container level) need to be open.
 
 > **Note:** The `netflow` receiver has **Alpha** stability as of v0.149.0. Configuration may change in future releases without a deprecation period.
+
+---
+
+## Getting the Collector Binary
+
+The `netflow` receiver is not in the core OTel Collector binary. You need one of three distributions that include it. The Makefiles and Go source files in the [receiver's GitHub directory](https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/v0.149.0/receiver/netflowreceiver) are OTel's internal development tooling — you do not need to build from source unless you want a custom distribution.
+
+---
+
+### Option A — OTel Collector Contrib (pre-built)
+
+The easiest path. The Contrib distribution includes every receiver in the contrib repo, including `netflow`.
+
+**Docker (recommended for quick start):**
+
+```bash
+docker run \
+  -e DT_ENDPOINT="https://{your-env-id}.live.dynatrace.com/api/v2/otlp" \
+  -e DT_API_TOKEN="your-token-here" \
+  -p 2055:2055/udp \
+  -v $(pwd)/collector.yaml:/etc/otelcol-contrib/config.yaml \
+  otel/opentelemetry-collector-contrib:0.149.0
+```
+
+**Binary download:**
+
+Download the pre-built binary for your platform from the [OTel Collector Contrib releases page](https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/tag/v0.149.0). Look for `otelcol-contrib_{version}_{os}_{arch}.tar.gz`.
+
+```bash
+# Example for Linux amd64
+curl -LO https://github.com/open-telemetry/opentelemetry-collector-contrib/releases/download/v0.149.0/otelcol-contrib_0.149.0_linux_amd64.tar.gz
+tar -xzf otelcol-contrib_0.149.0_linux_amd64.tar.gz
+./otelcol-contrib --config collector.yaml
+```
+
+**Trade-off:** The Contrib binary is large (~500 MB) because it bundles every available component. Fine for getting started; consider Option C for production if binary size or memory footprint matters.
+
+---
+
+### Option B — Dynatrace Collector
+
+The Dynatrace Collector is a curated distribution that includes the `netflow` receiver and is officially supported by Dynatrace. It is the recommended option per the [Dynatrace NetFlow docs](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/use-cases/netflow).
+
+Install and configure it following the [Dynatrace Collector deployment guide](https://docs.dynatrace.com/docs/ingest-from/opentelemetry/collector/deployment). Once installed, use the same `collector.yaml` shown in this guide — no build steps required.
+
+> **Note:** Confirm the netflow receiver is included in your specific Dynatrace Collector version before deploying. Check the release notes or component list in the Dynatrace docs.
+
+---
+
+### Option C — Custom Build with OCB
+
+The **OpenTelemetry Collector Builder (OCB)** lets you build a minimal binary that contains only the components you need. This is the right approach for production deployments where you want a lean, auditable binary.
+
+**Step 1 — Install OCB:**
+
+```bash
+# Download the OCB binary for your platform (match version to your collector components)
+curl -LO https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/cmd%2Fbuilder%2Fv0.149.0/ocb_0.149.0_linux_amd64
+chmod +x ocb_0.149.0_linux_amd64
+mv ocb_0.149.0_linux_amd64 /usr/local/bin/ocb
+```
+
+**Step 2 — Create a builder manifest (`builder-config.yaml`):**
+
+This defines exactly which components to include in your custom binary:
+
+```yaml
+dist:
+  module: github.com/myorg/otelcol-netflow
+  name: otelcol-netflow
+  description: "Custom OTel Collector with NetFlow receiver for Dynatrace"
+  output_path: ./dist
+  version: "0.149.0"
+
+receivers:
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/receiver/netflowreceiver v0.149.0
+
+processors:
+  - gomod: go.opentelemetry.io/collector/processor/batchprocessor v0.129.0
+
+exporters:
+  - gomod: go.opentelemetry.io/collector/exporter/otlphttpexporter v0.129.0
+
+providers:
+  - gomod: go.opentelemetry.io/collector/confmap/provider/envprovider v1.35.0
+  - gomod: go.opentelemetry.io/collector/confmap/provider/fileprovider v1.35.0
+
+extensions: []
+```
+
+> **Version alignment:** The `gomod` versions for core components (`batchprocessor`, `otlphttpexporter`, `envprovider`) must match the core collector version that corresponds to contrib v0.149.0. Check the contrib repo's `go.mod` for the exact versions if the build fails.
+
+**Step 3 — Build:**
+
+```bash
+ocb --config=builder-config.yaml
+```
+
+OCB will:
+1. Generate Go source files that wire together your components
+2. Resolve and download Go module dependencies
+3. Compile the binary to `./dist/otelcol-netflow`
+
+**Step 4 — Run:**
+
+```bash
+export DT_ENDPOINT="https://{your-env-id}.live.dynatrace.com/api/v2/otlp"
+export DT_API_TOKEN="your-token-here"
+./dist/otelcol-netflow --config collector.yaml
+```
+
+**Trade-off:** Produces a small, purpose-built binary. Requires Go installed and a rebuild whenever you add components or update versions.
 
 ---
 
