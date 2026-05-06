@@ -2,6 +2,8 @@
 
 A practical guide for receiving network flow telemetry from routers, switches, and firewalls and shipping it to Dynatrace using the OTel Collector's `netflow` receiver.
 
+> **Setting up for the first time?** Start with [netflow-quickstart.md](netflow-quickstart.md) — a step-by-step runbook with a verification ladder. This page is the deep reference (config options, alternative builds, K8s patterns, tuning).
+
 ---
 
 ## Table of Contents

@@ -1135,6 +1135,7 @@ exporter = OTLPSpanExporter(
 | [filelog-collector.md](filelog-collector.md) | Ingest logs from files (JSON, regex, multiline, Nginx, Java) using the OTel Collector filelog receiver |
 | [otel-demo-kubernetes.md](otel-demo-kubernetes.md) | Deploy the OTel Demo app to Kubernetes and route all telemetry to Dynatrace via Helm |
 | [netflow-collector.md](netflow-collector.md) | Receive NetFlow / sFlow / IPFIX network flow telemetry and ship to Dynatrace via the OTel Collector |
+| [netflow-quickstart.md](netflow-quickstart.md) | Step-by-step runbook for getting a first NetFlow / sFlow / IPFIX record into Dynatrace, with a verification ladder for each layer |
 
 ---
 
