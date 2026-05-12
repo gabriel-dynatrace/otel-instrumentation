@@ -1,0 +1,13 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+        "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "https://<env>.live.dynatrace.com/api/v2/otlp",
+        "OTEL_EXPORTER_OTLP_HEADERS": "Authorization=Api-Token dt0c01.REPLACE_ME",
+        "OTEL_EXPORTER_OTLP_PROTOCOL": "http/protobuf",
+        "OTEL_SERVICE_NAME": "gabriel-otel-demo",
+        "OTEL_RESOURCE_ATTRIBUTES": "deployment.environment=local"
+    }
+}
